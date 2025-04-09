@@ -230,9 +230,17 @@ def generate_qr_code(message):
     encrypted = encrypt_message(message)
     st.session_state.encrypted_message_qr = encrypted
 
-    qr = qrcode.make(encrypted)
+    # Encode encrypted message in URL
+    url = f"https://qr-steganography-app-tkq5ausfdlprarxz4qbnm9.streamlit.app/?data={encrypted}"
+
+    # Smaller, mobile-friendly QR
+    qr = qrcode.QRCode(version=2, box_size=4, border=2)
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill="black", back_color="white")
+
     qr_path = "/tmp/encrypted_qr.png"
-    qr.save(qr_path)
+    img.save(qr_path)
     st.session_state.qr_path = qr_path
 
     password = generate_random_password()
@@ -240,15 +248,15 @@ def generate_qr_code(message):
 
     with open("/tmp/password.txt", "w") as f:
         f.write(password)
-
     with open("/tmp/encrypted_message.txt", "w") as f:
         f.write(encrypted)
 
     st.success("✅ Encrypted QR and password generated.")
-    st.image(qr_path, caption="Generated QR Code")
+    st.image(qr_path, caption="📱 Scan to open decrypt app", width=300)
 
     with open(qr_path, "rb") as file:
         st.download_button("📥 Download QR Code", data=file, file_name="encrypted_qr.png", mime="image/png")
+
 
 def verify_uploaded_qr(uploaded_file):
     uploaded_bytes = uploaded_file.read()
