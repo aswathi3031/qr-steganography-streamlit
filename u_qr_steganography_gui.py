@@ -241,16 +241,11 @@ def generate_keys():
     private_bytes = rsa_key.export_key()
     public_bytes = rsa_key.publickey().export_key()
 
+    # Store only in session, NOT uploading to GitHub
     st.session_state["private_key"] = private_bytes
     st.session_state["public_key"] = public_bytes
 
-    success1 = upload_to_github(get_paths()["private_key"], private_bytes)
-    success2 = upload_to_github(get_paths()["public_key"], public_bytes)
-
-    if success1 and success2:
-        st.success("✅ RSA keys generated and uploaded to GitHub.")
-    else:
-        st.error("❌ Failed to upload RSA keys to GitHub.")
+    st.success("✅ RSA keys generated and stored in session (not uploaded to GitHub).")
 
 def encrypt_message(message):
     pub_key = RSA.import_key(st.session_state["public_key"])
@@ -264,19 +259,14 @@ def generate_qr_code(message):
 
     upload_msg = upload_to_github(get_paths()["message"], encrypted.encode())
 
-    # ✅ Save QR to local directory
     qr = qrcode.make(encrypted)
-    qr_save_dir = r"C:\Users\aswat\Downloads\qr_ics"
-    os.makedirs(qr_save_dir, exist_ok=True)
-    qr_path = os.path.join(qr_save_dir, "encrypted_qr.png")
+    qr_path = get_paths()["qr"]
     qr.save(qr_path)
 
-    # Upload QR to GitHub
     with open(qr_path, "rb") as qr_file:
         qr_data = qr_file.read()
-        upload_qr = upload_to_github(get_paths()["qr"], qr_data)
+        upload_qr = upload_to_github(qr_path, qr_data)
 
-    # Generate and upload password
     password = generate_random_password()
     st.session_state.qr_password = password
     upload_pwd = upload_to_github(get_paths()["password"], password.encode())
@@ -299,8 +289,7 @@ def verify_uploaded_qr(uploaded_file):
     return False
 
 def decrypt_qr_message():
-    priv_url = f"https://raw.githubusercontent.com/{USERNAME}/{REPO_NAME}/main/{get_paths()['private_key']}"
-    private_key = RSA.import_key(requests.get(priv_url).content)
+    private_key = RSA.import_key(st.session_state["private_key"])
     cipher = PKCS1_OAEP.new(private_key)
     return cipher.decrypt(base64.b64decode(st.session_state.encrypted_message_qr)).decode()
 
