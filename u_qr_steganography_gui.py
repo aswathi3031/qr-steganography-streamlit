@@ -183,6 +183,131 @@
 # root.mainloop()
 
 
+# import streamlit as st
+# import qrcode
+# from PIL import Image
+# from Crypto.PublicKey import RSA
+# from Crypto.Cipher import PKCS1_OAEP
+# import base64
+# import os
+# import random
+# import string
+
+# # Session state setup
+# st.session_state.setdefault("qr_verified", False)
+# st.session_state.setdefault("encrypted_message_qr", None)
+# st.session_state.setdefault("qr_password", "")
+# st.session_state.setdefault("private_key", None)
+# st.session_state.setdefault("public_key", None)
+# st.session_state.setdefault("qr_path", "")
+
+# def generate_random_password(length=8):
+#     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+# def generate_keys():
+#     rsa_key = RSA.generate(2048)
+#     private_bytes = rsa_key.export_key()
+#     public_bytes = rsa_key.publickey().export_key()
+
+#     # Save to session and local files
+#     st.session_state["private_key"] = private_bytes
+#     st.session_state["public_key"] = public_bytes
+
+#     with open("/tmp/private.pem", "wb") as f:
+#         f.write(private_bytes)
+#     with open("/tmp/public.pem", "wb") as f:
+#         f.write(public_bytes)
+
+#     st.success("✅ RSA keys generated and saved in Streamlit Cloud.")
+
+# def encrypt_message(message):
+#     pub_key = RSA.import_key(st.session_state["public_key"])
+#     cipher = PKCS1_OAEP.new(pub_key)
+#     encrypted = cipher.encrypt(message.encode())
+#     return base64.b64encode(encrypted).decode()
+
+# def generate_qr_code(message):
+#     encrypted = encrypt_message(message)
+#     st.session_state.encrypted_message_qr = encrypted
+
+#     # Encode encrypted message in URL
+#     url = f"https://qr-steganography-app-tkq5ausfdlprarxz4qbnm9.streamlit.app/?data={encrypted}"
+
+#     # Smaller, mobile-friendly QR
+#     qr = qrcode.QRCode(version=2, box_size=4, border=2)
+#     qr.add_data(url)
+#     qr.make(fit=True)
+#     img = qr.make_image(fill="black", back_color="white")
+
+#     qr_path = "/tmp/encrypted_qr.png"
+#     img.save(qr_path)
+#     st.session_state.qr_path = qr_path
+
+#     password = generate_random_password()
+#     st.session_state.qr_password = password
+
+#     with open("/tmp/password.txt", "w") as f:
+#         f.write(password)
+#     with open("/tmp/encrypted_message.txt", "w") as f:
+#         f.write(encrypted)
+
+#     st.success("✅ Encrypted QR and password generated.")
+#     st.image(qr_path, caption="📱 Scan to open decrypt app", width=300)
+
+#     with open(qr_path, "rb") as file:
+#         st.download_button("📥 Download QR Code", data=file, file_name="encrypted_qr.png", mime="image/png")
+
+
+# def verify_uploaded_qr(uploaded_file):
+#     uploaded_bytes = uploaded_file.read()
+#     with open("/tmp/encrypted_qr.png", "rb") as f:
+#         stored_qr = f.read()
+#     if uploaded_bytes == stored_qr:
+#         st.session_state.qr_verified = True
+#         return True
+#     st.session_state.qr_verified = False
+#     return False
+
+# def decrypt_qr_message():
+#     private_key = RSA.import_key(open("/tmp/private.pem", "rb").read())
+#     cipher = PKCS1_OAEP.new(private_key)
+#     return cipher.decrypt(base64.b64decode(st.session_state.encrypted_message_qr)).decode()
+
+# # -------------------------- UI ----------------------------
+
+# st.title("🔐 QR Code Steganography (Sender Interface)")
+
+# st.subheader("Sender Section")
+# if st.button("Generate RSA Keys"):
+#     generate_keys()
+
+# message = st.text_input("Enter Message to Encrypt")
+# if st.button("Encrypt Message & Generate QR Code"):
+#     if not st.session_state["public_key"]:
+#         st.warning("⚠️ Please generate RSA keys first.")
+#     elif message:
+#         generate_qr_code(message)
+#     else:
+#         st.warning("⚠️ Please enter a message to encrypt.")
+
+# st.subheader("Receiver Section")
+# uploaded_file = st.file_uploader("📤 Upload QR Code (PNG)", type=["png"])
+# if uploaded_file and st.button("Verify QR Code"):
+#     if verify_uploaded_qr(uploaded_file):
+#         st.success("✅ QR Code Verified.")
+#         st.info(f"🔐 Password: {st.session_state.qr_password}")
+#     else:
+#         st.error("❌ QR Code Verification Failed!")
+
+# if st.button("Decrypt Message"):
+#     if st.session_state.qr_verified:
+#         st.success(f"🔓 Message: {decrypt_qr_message()}")
+#     else:
+#         st.warning("⚠️ Please verify QR first.")
+
+#         st.warning("⚠️ Please verify QR first.")
+
+
 import streamlit as st
 import qrcode
 from PIL import Image
@@ -192,6 +317,11 @@ import base64
 import os
 import random
 import string
+
+# Common shared path
+SHARED_PATH = "/shared"  # Change this to your desired shared location
+
+os.makedirs(SHARED_PATH, exist_ok=True)
 
 # Session state setup
 st.session_state.setdefault("qr_verified", False)
@@ -209,16 +339,15 @@ def generate_keys():
     private_bytes = rsa_key.export_key()
     public_bytes = rsa_key.publickey().export_key()
 
-    # Save to session and local files
     st.session_state["private_key"] = private_bytes
     st.session_state["public_key"] = public_bytes
 
-    with open("/tmp/private.pem", "wb") as f:
+    with open(os.path.join(SHARED_PATH, "private.pem"), "wb") as f:
         f.write(private_bytes)
-    with open("/tmp/public.pem", "wb") as f:
+    with open(os.path.join(SHARED_PATH, "public.pem"), "wb") as f:
         f.write(public_bytes)
 
-    st.success("✅ RSA keys generated and saved in Streamlit Cloud.")
+    st.success("✅ RSA keys generated and saved.")
 
 def encrypt_message(message):
     pub_key = RSA.import_key(st.session_state["public_key"])
@@ -230,25 +359,23 @@ def generate_qr_code(message):
     encrypted = encrypt_message(message)
     st.session_state.encrypted_message_qr = encrypted
 
-    # Encode encrypted message in URL
-    url = f"https://qr-steganography-app-tkq5ausfdlprarxz4qbnm9.streamlit.app/?data={encrypted}"
+    url = f"https://your-app-url/?data={encrypted}"  # Only for QR representation
 
-    # Smaller, mobile-friendly QR
     qr = qrcode.QRCode(version=2, box_size=4, border=2)
     qr.add_data(url)
     qr.make(fit=True)
     img = qr.make_image(fill="black", back_color="white")
 
-    qr_path = "/tmp/encrypted_qr.png"
+    qr_path = os.path.join(SHARED_PATH, "encrypted_qr.png")
     img.save(qr_path)
     st.session_state.qr_path = qr_path
 
     password = generate_random_password()
     st.session_state.qr_password = password
 
-    with open("/tmp/password.txt", "w") as f:
+    with open(os.path.join(SHARED_PATH, "password.txt"), "w") as f:
         f.write(password)
-    with open("/tmp/encrypted_message.txt", "w") as f:
+    with open(os.path.join(SHARED_PATH, "encrypted_message.txt"), "w") as f:
         f.write(encrypted)
 
     st.success("✅ Encrypted QR and password generated.")
@@ -257,19 +384,15 @@ def generate_qr_code(message):
     with open(qr_path, "rb") as file:
         st.download_button("📥 Download QR Code", data=file, file_name="encrypted_qr.png", mime="image/png")
 
-
 def verify_uploaded_qr(uploaded_file):
     uploaded_bytes = uploaded_file.read()
-    with open("/tmp/encrypted_qr.png", "rb") as f:
+    with open(os.path.join(SHARED_PATH, "encrypted_qr.png"), "rb") as f:
         stored_qr = f.read()
-    if uploaded_bytes == stored_qr:
-        st.session_state.qr_verified = True
-        return True
-    st.session_state.qr_verified = False
-    return False
+    st.session_state.qr_verified = uploaded_bytes == stored_qr
+    return st.session_state.qr_verified
 
 def decrypt_qr_message():
-    private_key = RSA.import_key(open("/tmp/private.pem", "rb").read())
+    private_key = RSA.import_key(open(os.path.join(SHARED_PATH, "private.pem"), "rb").read())
     cipher = PKCS1_OAEP.new(private_key)
     return cipher.decrypt(base64.b64decode(st.session_state.encrypted_message_qr)).decode()
 
@@ -303,6 +426,4 @@ if st.button("Decrypt Message"):
     if st.session_state.qr_verified:
         st.success(f"🔓 Message: {decrypt_qr_message()}")
     else:
-        st.warning("⚠️ Please verify QR first.")
-
         st.warning("⚠️ Please verify QR first.")
