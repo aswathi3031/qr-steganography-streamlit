@@ -264,15 +264,19 @@ def generate_qr_code(message):
 
     upload_msg = upload_to_github(get_paths()["message"], encrypted.encode())
 
-    # Generate QR from encrypted message itself (not fixed URL)
+    # ✅ Save QR to local directory
     qr = qrcode.make(encrypted)
-    qr_path = get_paths()["qr"]
+    qr_save_dir = r"C:\Users\aswat\Downloads\qr_ics"
+    os.makedirs(qr_save_dir, exist_ok=True)
+    qr_path = os.path.join(qr_save_dir, "encrypted_qr.png")
     qr.save(qr_path)
 
+    # Upload QR to GitHub
     with open(qr_path, "rb") as qr_file:
         qr_data = qr_file.read()
-        upload_qr = upload_to_github(qr_path, qr_data)
+        upload_qr = upload_to_github(get_paths()["qr"], qr_data)
 
+    # Generate and upload password
     password = generate_random_password()
     st.session_state.qr_password = password
     upload_pwd = upload_to_github(get_paths()["password"], password.encode())
