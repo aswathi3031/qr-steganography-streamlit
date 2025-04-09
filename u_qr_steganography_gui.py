@@ -262,9 +262,10 @@ def generate_qr_code(message):
     upload_to_github(get_paths()["message"], encrypted.encode())
 
     # QR code URL
-    qr_url = "https://qr-steganography-streamlit.streamlit.app"
+    qr_url = "https://qr-steganography-app-tkq5ausfdlprarxz4qbnm9.streamlit.app/"
     qr = qrcode.make(qr_url)
     qr.save(get_paths()["qr"])
+
 
     with open(get_paths()["qr"], "rb") as qr_file:
         upload_to_github(get_paths()["qr"], qr_file.read())
