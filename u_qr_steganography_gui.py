@@ -318,12 +318,10 @@ import os
 import random
 import string
 
-# Common shared path
-SHARED_PATH = "/shared"  # Change this to your desired shared location
-
+# Shared directory for password and keys
+SHARED_PATH = "/tmp/shared"
 os.makedirs(SHARED_PATH, exist_ok=True)
 
-# Session state setup
 st.session_state.setdefault("qr_verified", False)
 st.session_state.setdefault("encrypted_message_qr", None)
 st.session_state.setdefault("qr_password", "")
@@ -359,8 +357,7 @@ def generate_qr_code(message):
     encrypted = encrypt_message(message)
     st.session_state.encrypted_message_qr = encrypted
 
-    url = f"https://your-app-url/?data={encrypted}"  # Only for QR representation
-
+    url = f"https://qr-steganography-app.streamlit.app/?data={encrypted}"
     qr = qrcode.QRCode(version=2, box_size=4, border=2)
     qr.add_data(url)
     qr.make(fit=True)
@@ -388,8 +385,11 @@ def verify_uploaded_qr(uploaded_file):
     uploaded_bytes = uploaded_file.read()
     with open(os.path.join(SHARED_PATH, "encrypted_qr.png"), "rb") as f:
         stored_qr = f.read()
-    st.session_state.qr_verified = uploaded_bytes == stored_qr
-    return st.session_state.qr_verified
+    if uploaded_bytes == stored_qr:
+        st.session_state.qr_verified = True
+        return True
+    st.session_state.qr_verified = False
+    return False
 
 def decrypt_qr_message():
     private_key = RSA.import_key(open(os.path.join(SHARED_PATH, "private.pem"), "rb").read())
