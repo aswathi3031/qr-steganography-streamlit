@@ -238,7 +238,7 @@ def encrypt_message(message):
 def generate_qr_code(message):
     st.session_state.encrypted_message_qr = encrypt_message(message)
 
-    qr_url = "https://2dba-116-74-129-198.ngrok-free.app"  # your static URL
+    qr_url = " https://7842-116-74-129-198.ngrok-free.app"  # your static URL
     with open(encrypted_message_path, "w") as msg_file:
         msg_file.write(message)
 
@@ -277,7 +277,7 @@ if st.button("Encrypt Message & Generate QR Code"):
         generate_qr_code(message)
         st.success("✅ QR Code and Encrypted Message Generated.")
         st.image(qr_image_path, caption="Encrypted QR Code", width=200)
-        st.info(f"🔗 QR URL: https://2dba-116-74-129-198.ngrok-free.app")
+        st.info(f"🔗 QR URL:  https://7842-116-74-129-198.ngrok-free.app")
     else:
         st.warning("⚠️ Please enter a message.")
 
