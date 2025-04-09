@@ -5,3 +5,9 @@ pypng
 Pillow
 pycryptodome
 joblib
+cryptography
+qrcode[pil]
+pyzbar
+requests
+python-dotenv
+PyMuPDF
