@@ -207,6 +207,7 @@ st.session_state.setdefault("encrypted_message_qr", None)
 st.session_state.setdefault("qr_password", "")
 st.session_state.setdefault("private_key", None)
 st.session_state.setdefault("public_key", None)
+st.session_state.setdefault("qr_path", "")
 
 def get_paths():
     return {
@@ -264,13 +265,13 @@ def generate_qr_code(message):
 
     upload_msg = upload_to_github(get_paths()["message"], encrypted.encode())
 
-    # Save QR to temporary file
+    # Save QR to /tmp/
     qr = qrcode.make(encrypted)
-    tmp_qr_path = "/tmp/encrypted_qr.png"
-    qr.save(tmp_qr_path)
+    qr_path = "/tmp/encrypted_qr.png"
+    qr.save(qr_path)
+    st.session_state.qr_path = qr_path
 
-    # Upload QR to GitHub
-    with open(tmp_qr_path, "rb") as qr_file:
+    with open(qr_path, "rb") as qr_file:
         qr_data = qr_file.read()
         upload_qr = upload_to_github(get_paths()["qr"], qr_data)
 
@@ -280,12 +281,9 @@ def generate_qr_code(message):
 
     if upload_msg and upload_qr and upload_pwd:
         st.success("✅ Encrypted QR & Password Generated.")
-        st.image(tmp_qr_path, caption="📷 Encrypted QR Code")
-
-        # Download button
-        with open(tmp_qr_path, "rb") as f:
-            st.download_button("⬇️ Download QR Code", f.read(), "encrypted_qr.png", mime="image/png")
-
+        st.image(qr_path, caption="Generated QR Code")
+        with open(qr_path, "rb") as file:
+            st.download_button("📥 Download QR Code", data=file, file_name="encrypted_qr.png", mime="image/png")
     else:
         st.error("❌ Failed to upload encrypted data to GitHub.")
 
