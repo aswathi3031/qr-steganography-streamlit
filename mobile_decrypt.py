@@ -5,9 +5,9 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 
 # GitHub secrets
-GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-REPO_NAME = st.secrets["REPO_NAME"]
-USERNAME = st.secrets["USERNAME"]
+GITHUB_TOKEN = st.secrets["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"]
+REPO_NAME = st.secrets["aswathi3031/qr-steganography-streamlit"]
+USERNAME = st.secrets["aswathi3031"]
 
 def get_file(file_name):
     url = f"https://raw.githubusercontent.com/{REPO_NAME}/main/{file_name}"
