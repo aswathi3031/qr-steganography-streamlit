@@ -4,3 +4,5 @@ Pillow
 pycryptodome
 pyzbar
 joblib
+opencv-python
+numpy
