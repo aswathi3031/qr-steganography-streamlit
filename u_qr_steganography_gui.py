@@ -188,18 +188,10 @@ import qrcode
 from PIL import Image
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
-import base64, os, random, string, requests
-
-# GitHub secrets
-GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-REPO_NAME = st.secrets["REPO_NAME"]
-USERNAME = st.secrets["USERNAME"]
-BRANCH = "main"
-
-HEADERS = {
-    "Authorization": f"token {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github.v3+json"
-}
+import base64
+import os
+import random
+import string
 
 # Session state setup
 st.session_state.setdefault("qr_verified", False)
@@ -209,31 +201,6 @@ st.session_state.setdefault("private_key", None)
 st.session_state.setdefault("public_key", None)
 st.session_state.setdefault("qr_path", "")
 
-def get_paths():
-    return {
-        "private_key": "private.pem",
-        "public_key": "public.pem",
-        "password": "password.txt",
-        "message": "encrypted_message.txt",
-        "qr": "encrypted_qr.png"
-    }
-
-def upload_to_github(filename, content_bytes):
-    url = f"https://api.github.com/repos/{USERNAME}/{REPO_NAME}/contents/{filename}"
-    get_response = requests.get(url, headers=HEADERS)
-    sha = get_response.json().get("sha") if get_response.status_code == 200 else None
-
-    payload = {
-        "message": f"Update {filename}",
-        "content": base64.b64encode(content_bytes).decode(),
-        "branch": BRANCH
-    }
-    if sha:
-        payload["sha"] = sha
-
-    res = requests.put(url, headers=HEADERS, json=payload)
-    return res.status_code in [200, 201]
-
 def generate_random_password(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
@@ -242,16 +209,16 @@ def generate_keys():
     private_bytes = rsa_key.export_key()
     public_bytes = rsa_key.publickey().export_key()
 
+    # Save to session and local files
     st.session_state["private_key"] = private_bytes
     st.session_state["public_key"] = public_bytes
 
-    success1 = upload_to_github(get_paths()["private_key"], private_bytes)
-    success2 = upload_to_github(get_paths()["public_key"], public_bytes)
+    with open("/tmp/private.pem", "wb") as f:
+        f.write(private_bytes)
+    with open("/tmp/public.pem", "wb") as f:
+        f.write(public_bytes)
 
-    if success1 and success2:
-        st.success("✅ RSA keys generated and uploaded to GitHub.")
-    else:
-        st.error("❌ Failed to upload RSA keys to GitHub.")
+    st.success("✅ RSA keys generated and saved in Streamlit Cloud.")
 
 def encrypt_message(message):
     pub_key = RSA.import_key(st.session_state["public_key"])
@@ -263,35 +230,30 @@ def generate_qr_code(message):
     encrypted = encrypt_message(message)
     st.session_state.encrypted_message_qr = encrypted
 
-    upload_msg = upload_to_github(get_paths()["message"], encrypted.encode())
-
-    # Save QR to /tmp/
     qr = qrcode.make(encrypted)
     qr_path = "/tmp/encrypted_qr.png"
     qr.save(qr_path)
     st.session_state.qr_path = qr_path
 
-    with open(qr_path, "rb") as qr_file:
-        qr_data = qr_file.read()
-        upload_qr = upload_to_github(get_paths()["qr"], qr_data)
-
     password = generate_random_password()
     st.session_state.qr_password = password
-    upload_pwd = upload_to_github(get_paths()["password"], password.encode())
 
-    if upload_msg and upload_qr and upload_pwd:
-        st.success("✅ Encrypted QR & Password Generated.")
-        st.image(qr_path, caption="Generated QR Code")
-        with open(qr_path, "rb") as file:
-            st.download_button("📥 Download QR Code", data=file, file_name="encrypted_qr.png", mime="image/png")
-    else:
-        st.error("❌ Failed to upload encrypted data to GitHub.")
+    with open("/tmp/password.txt", "w") as f:
+        f.write(password)
+
+    with open("/tmp/encrypted_message.txt", "w") as f:
+        f.write(encrypted)
+
+    st.success("✅ Encrypted QR and password generated.")
+    st.image(qr_path, caption="Generated QR Code")
+
+    with open(qr_path, "rb") as file:
+        st.download_button("📥 Download QR Code", data=file, file_name="encrypted_qr.png", mime="image/png")
 
 def verify_uploaded_qr(uploaded_file):
     uploaded_bytes = uploaded_file.read()
-    stored_qr = requests.get(
-        f"https://raw.githubusercontent.com/{USERNAME}/{REPO_NAME}/main/{get_paths()['qr']}"
-    ).content
+    with open("/tmp/encrypted_qr.png", "rb") as f:
+        stored_qr = f.read()
     if uploaded_bytes == stored_qr:
         st.session_state.qr_verified = True
         return True
@@ -299,8 +261,7 @@ def verify_uploaded_qr(uploaded_file):
     return False
 
 def decrypt_qr_message():
-    priv_url = f"https://raw.githubusercontent.com/{USERNAME}/{REPO_NAME}/main/{get_paths()['private_key']}"
-    private_key = RSA.import_key(requests.get(priv_url).content)
+    private_key = RSA.import_key(open("/tmp/private.pem", "rb").read())
     cipher = PKCS1_OAEP.new(private_key)
     return cipher.decrypt(base64.b64decode(st.session_state.encrypted_message_qr)).decode()
 
@@ -334,4 +295,6 @@ if st.button("Decrypt Message"):
     if st.session_state.qr_verified:
         st.success(f"🔓 Message: {decrypt_qr_message()}")
     else:
+        st.warning("⚠️ Please verify QR first.")
+
         st.warning("⚠️ Please verify QR first.")
