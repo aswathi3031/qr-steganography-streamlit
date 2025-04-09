@@ -1,0 +1,5 @@
+cd C:\Users\aswat\Downloads\qr_ics\ngrok-v3-stable-windows-amd64
+$env:Path += ";C:\Users\aswat\Downloads\qr_ics\ngrok-v3-stable-windows-amd64"
+ngrok --version
+ngrok http 5000
+
