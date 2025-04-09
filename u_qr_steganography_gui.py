@@ -335,4 +335,3 @@ if st.button("Decrypt Message"):
         st.success(f"🔓 Message: {decrypt_qr_message()}")
     else:
         st.warning("⚠️ Please verify QR first.")
-
