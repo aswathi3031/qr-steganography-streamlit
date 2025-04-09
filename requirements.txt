@@ -1,4 +1,6 @@
 streamlit
 qrcode
 Pillow
-cryptography
+pycryptodome
+pyzbar
+joblib
