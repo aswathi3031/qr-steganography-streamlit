@@ -189,7 +189,7 @@ from PIL import Image
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 import base64
-from pyzbar.pyzbar import decode
+import cv2
 import joblib
 import os
 import random
@@ -248,13 +248,13 @@ def generate_qr_code(message):
         pwd_file.write(st.session_state.qr_password)
 
 def verify_uploaded_qr(uploaded_file):
-    img = Image.open(uploaded_file)
-    decoded_data = decode(img)
-    if decoded_data:
-        scanned = decoded_data[0].data.decode()
-        if scanned == "https://2dba-116-74-129-198.ngrok-free.app":
-            st.session_state.qr_verified = True
-            return True
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    detector = cv2.QRCodeDetector()
+    data, bbox, _ = detector.detectAndDecode(img)
+    if data and data == "https://2dba-116-74-129-198.ngrok-free.app":
+        st.session_state.qr_verified = True
+        return True
     return False
 
 def decrypt_qr_message():
