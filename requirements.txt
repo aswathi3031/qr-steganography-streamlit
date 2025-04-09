@@ -1,8 +1,7 @@
 streamlit
 qrcode
+pyqrcode
+pypng
 Pillow
 pycryptodome
-pyzbar
 joblib
-opencv-python
-numpy
